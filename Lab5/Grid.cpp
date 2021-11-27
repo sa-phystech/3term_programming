@@ -10,7 +10,7 @@ public:
     {
         if(xsize == 0 || ysize == 0)
         {
-            std::cout<< "Vvedi normalnie znacheniya" << std::endl;
+            std::cout<< "Incorrect values, try again" << std::endl;
             std::cin >> xsize;
             std::cin >> ysize;
         }
@@ -55,8 +55,7 @@ public:
             std::cout <<"Error" <<std::endl;
         }
         float a = 0.0;
-        float &b = a;
-        return b;
+        return a;
     }
     size_t get_xsize() const
     {
@@ -106,7 +105,7 @@ int main()
 {
     Grid set1(2, 2);
     float a;
-    a = 5.3;
+    a = 35.3;
     set1 = a;
     Grid set2(2, 2);
     std::cin >> set2;
@@ -120,7 +119,7 @@ int main()
 
     set1.deleteelement(0, 0);
     std::cout << set1 << std::endl;
-    Grid *set3 = new Grid(2, 2);
     set1.~Grid();
+    set2.~Grid();
     return 0;
 }
