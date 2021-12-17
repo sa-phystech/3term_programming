@@ -1,119 +1,149 @@
 #include <iostream>
+#include <vector>
+#include <iterator>
+#include <memory>
+#include <limits>
+#include <cmath>
+#include <random>
 
-template <typename T>
- struct Node
- {
-     T value;
-     Node** DifferentLevels
-     /*Node* next;
-     Node* previous;*/
- };
+template <class T>
+struct Node
+{
+    T value;
+    int lvl;
+    std::vector<Node*> next;
 
- class SkipList
- {
- private:
-    Node * head;
-    Node * tail;
-    float probability;
-    int MaxLevel;
-    int ListSize;
- public:
-    SkipList();
-    SkipList();
-    ~SkipList();
-
-    int RandomLevel()
+    Node (const T& val)
     {
-        int lvl = 1;
-        float a = (rand() % 100 + 1) / 100.0;
-        while((a < probability) && (lvl < MaxLevel))
+        value = val;
+    }
+
+    ~Node()
+    {
+        lvl = 0;
+        value = 0;
+        for(int i = 0; i < next.size(); i++)
         {
-            lvl += 1;
+            delete next[i];
         }
+    }
+};
 
-        return lvl;
+template <class T>
+class SkipList
+{
+private:
+    double prob;
+    int length;
+    int maxlvl;
+    Node<T>* head;
+
+    float GenerateRandomValue()
+    {
+        return (float) rand() / RAND_MAX;
     }
 
-    Node* Find(T val)
+    int random_lvl()
     {
-       Node* a = head;
-       Node* M[MaxLevel + 1];
-       for (int i = MaxLevel; i >= 0; i--)
-       {
-           while((x->DifferentLevels != nullptr) && (a->DifferentLevels[i]->value < val))
-           {
-               a = a->DifferentLevels[i];
-           }
-       }
-       a = a->DifferenyLevels[0];
-       return ((a != nullptr) && (x->value == val));
-    }
-    void Insert(T val)
-    {
-        Node* a = head;
-        Node* DifferentLevels[MaxLevel + 1];
-        for (int i = MaxLevel; i >= 0; i--)
+        static bool first = true;
+        if(first)
         {
-            while((a->DifferentLevels[i] != nullptr) && (a->DifferentLevels[i]->value < val))
+            srand((unsigned)time(NULL));
+            first = false;
+
+        }
+        int random_level = (int)(log(GenerateRandomValue()) / log(1.-prob));
+        return random_level < maxlvl ? random_level : maxlvl;
+    }
+
+    int choose_head()
+    {
+        head = new Node<T>(std::numeric_limits<T>::lowest());
+        for(int i = 0; i < maxlvl; i++)
+        {
+            head->next.push_back(nullptr);
+        }
+    }
+public:
+    SkipList()
+    {
+        prob = 0.5;
+        length = 0;
+        maxlvl = 10;
+        choose_head();
+    }
+
+    SkipList(const SkipList& skiplist)
+    {
+        prob = skiplist.prob;
+        length = skiplist.length;
+        maxlvl = skiplist.maxlvl;
+        head = skiplist.head;
+    }
+
+    SkipList(SkipList&& skiplist)
+    {
+        prob = skiplist.prob;
+        length = skiplist.length;
+        maxlvl = skiplist.maxlvl;
+        head = skiplist.head;
+
+        skiplist.prob = 0;
+        skiplist.length = 0;
+        skiplist.maxlvl = 0;
+        skiplist.head = nullptr;
+    }
+
+    bool empty()
+    {
+        return (length == 0);
+    }
+
+    int size()
+    {
+        return length;
+    }
+
+    void clear()
+    {
+        if(head != nullptr)
+        {
+            auto x = head;
+            while(x != nullptr)
             {
-                a = a->DifferentLevels[i];
-            }
-            update[i] = a;
-        }
-        a = a->DifferentLevels[0];
-        if ((a == nullptr) || (a->value != val))
-        {
-            int lvl = RandomLevel();
-            if (lvl > MaxLevel)
-            {
-                for (int i = MaxLevel + 1; i <= lvl; i++)
-                {
-                    update[i] = head;
-                }
-                MaxLevel = lvl;
-            }
-            res = new Node;
-            for (int i = 0; i <= lvl; i++)
-            {
-                x->DifferentLevels[i] = update[i]->DifferentLevels[i];
-                update[i]->DifferentLevels[i] = x;
+                auto x_next = x->next[0];
+                delete x;
+                x = x_next
             }
         }
+        choose_head();
+        length = 0;
     }
 
-    void PrintList();
-    void Erase(T value)
+    void insert(const T& val)
     {
-        Node *a = head;
-        Node *update[MaxLevel + 1];
-        for(int i = MaxLevel; i >= 0; i--)
+        int lvl = random_lvl();
+        Node<T>* h = head;
+        Node<T>* new_node = new Node<T>(val, lvl + 1);
+
+        for(auto i = maxlvl; i >= 0; i--)
         {
-            while((a->DifferentLevels[i] != nullptr)&&(a->DifferentLevels->value < val))
+            while((h->next[i] != nullptr) && ((*h).next[i]->value < val))
             {
-                a = a->DifferentLevels[i];
+                h = h->next[i];
+            }
+
+            if(i <= lvl)
+            {
+                new_node->next[i] = h->next[i];
+                h->next[i] = new_node;
             }
         }
-
-
+        length++;
     }
 
-    void Clear();
-    bool Empty()
-    {
-        if (head == nullptr)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-    int Size()
-    {
-        return ListSize;
-    }
-    int Count(T val)
-    Node* Upper_bound();
-    Node* Lower_bound();
- };
+
+
+
+
+};
