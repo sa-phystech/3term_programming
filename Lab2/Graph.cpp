@@ -1,213 +1,354 @@
 #include <iostream>
-#include <utility>
 #include <vector>
 #include <string>
+#include <queue>
 
-
-struct Edge
-{
-    std::pair<int, int> E;
-    bool passed = false;
-};
-
-struct Vertex
-{
-    std::string color;
-    int number;
-    std::vector<Edge> neighbours;
-
-};
 class Graph
 {
+private:
+    unsigned int amount_of_nodes;
+    std::vector<std::vector<int>> Adj;
 public:
-    int Vertexes;
-    std::vector<Vertex> Nodes;
-    std::vector< std::vector<int> > Adj;
     Graph()
     {
-        int Vertexes = 0;
-
+        amount_of_nodes = 0;
+    }
+    Graph(std::vector<std::vector<int>> M)
+    {
+        int a = 0;
+        for(int i = 0; i < M.size(); i++)
+        {
+            if(M.size() != M[i].size())
+            {
+                std::cerr << "The matrix must be square.";
+                a = -1;
+            }
+        }
+        if(a != -1)
+        {
+            amount_of_nodes = M.size();
+            Adj = M;
+        }
     }
     ~Graph()
     {
-        Nodes.clear();
-    }
-    void AddVertex(Vertex v)
-    {
-        if(Vertexes != 0)
-        {
-            v.number = Nodes.size();
-            Nodes.push_back(v);
-            Vertexes += 1;
-            //std::cout << "ADD" << std::endl;
-        }
-        else
-        {
-            Vertexes = 1;
-            v.number = 0;
-            Nodes.push_back(v);
-            //std::cout << "ADD1" << std::endl;
-        }
 
     }
-    void AddEdge(Vertex v1, Vertex v2)
+    void Add_Edge(int from, int to)
     {
-        Edge e;
-        e.E= {v1.number, v2.number};
-        v1.neighbours.push_back(e);
-        //std::cout << "ADDEDGE" << std::endl;
+        Adj[from][to] = 1;
     }
 
+    void Add_Node()
+    {
+        std::vector<int> NewNodeEdges;
+        for(int i = 0; i < amount_of_nodes; i++)
+        {
+            Adj[i].push_back(0);
+        }
+        for(int i = 0; i < amount_of_nodes + 1; i++)
+        {
+            NewNodeEdges.push_back(0);
+        }
+        Adj.push_back(NewNodeEdges);
+        amount_of_nodes++;
+    }
+
+    void PrintAdjMatrix()
+    {
+        for(int i = 0; i < amount_of_nodes; i++)
+        {
+            for(int j = 0; j < amount_of_nodes; j++)
+            {
+                std::cout << Adj[j][i] << ' ';
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    int get_amount_nodes()
+    {
+        return amount_of_nodes;
+    }
+
+    std::vector<std::vector<int>> get_adjacency_matrix()
+    {
+        return Adj;
+    }
 };
 
-class DFSVisitor
+class Visitor
 {
 public:
-    std::vector< Edge > path;
-    std::vector< Edge > backedges;
-    std::vector< Edge > forwardedges;
+    virtual void initialize_node(int node, Graph &G) = 0;
 
-    void PrintPath()
+    virtual void start_node(int node, Graph &G) = 0;
+
+    virtual void discover_node(int node, Graph &G) = 0;
+
+    virtual void examine_edge(int from,int to, Graph &G) = 0;
+
+    virtual void tree_edge(int from, int to, Graph &G) = 0;
+
+    virtual void back_edge(int from, int to, Graph &G) = 0;
+
+    virtual void forward_or_cross_edge(int from, int to, Graph &G) = 0;
+
+    virtual void finish_edge(int from, int to, Graph &G) = 0;
+
+    virtual void finish_node(int node, Graph &G) = 0;
+
+
+    virtual ~Visitor()
     {
-        for(int i = 0; i < path.size(); i++)
+
+    };
+};
+
+class DFS: public Visitor
+{
+private:
+    std::vector<std::string> color;
+    std::vector<int> path;
+
+    void Algorithm(int start, Graph &G)
+    {
+        std::cout << start << std::endl;
+        discover_node(start, G);
+        for(int i = 0; i < G.get_amount_nodes(); i++)
         {
-
-            std::cout << path[i].E.first << ' ' << path[i].E.second << std::endl;
-        }
-
-        std::cout << std::endl;
-    }
-
-
-    void Initialize_vertex(Vertex v, Graph g)
-    {
-        v.color = "white";
-        //std::cout << "white" << std::endl;
-    }
-
-
-    void Discover_vertex(Vertex v, Graph g)
-    {
-        v.color = "gray";
-        //std::cout << "gray" << std::endl;
-        //Examine_edge(v);
-    }
-
-    void Examine_edge(Vertex v, Graph g)
-    {
-
-    }
-
-    void Tree_edge(Edge e, Graph g)
-    {
-        path.push_back(e);
-        //std::cout << "treeedge" << std::endl;
-    }
-
-    void Back_edge(Edge e, Graph g)
-    {
-        backedges.push_back(e);
-        //std::cout << "backedge" << std::endl;
-    }
-    void Forward_edge(Edge e, Graph g)
-    {
-        forwardedges.push_back(e);
-        //std::cout << "forwardedge" << std::endl;
-    }
-    void Finish_edge(Edge e, Graph g)
-    {
-        e.passed = true;
-        //std::cout << "finishedge" << std::endl;
-    }
-    void Finish_vertex(Vertex v, Graph g)
-    {
-        v.color = "black";
-        //std::cout << "black" << std::endl;
-    }
-
-
-
-
-    void DFS(Graph g, Vertex start)
-    {
-        for(int i = 0; i < g.Nodes.size(); i++)
-        {
-            Vertex j = g.Nodes[i];
-            Initialize_vertex(j, g);
-        }
-        DFS_Visit(start, g);
-        PrintPath();
-    }
-
-
-
-
-    void DFS_Visit(Vertex v, Graph g)
-    {
-        Discover_vertex(v, g);
-
-        for (int i = 0; i < v.neighbours.size(); i++)
-        {
-            Edge j = v.neighbours[i];
-            if(g.Nodes[j.E.second].color == "white")
+            if(G.get_adjacency_matrix()[start][i] == 1)
             {
-                Tree_edge(j, g);
-                DFS_Visit(g.Nodes[j.E.second], g);
-            }
-            else if(g.Nodes[j.E.second].color == "gray")
-            {
-                Back_edge(j, g);
-            }
-            else if(g.Nodes[j.E.second].color == "black")
-            {
-                Forward_edge(j, g);
+                examine_edge(start, i, G);
             }
         }
-        Finish_vertex(v, g);
-        //path.pop_back(v.number);
-        /*for (Edge i = v.neighbours.begin(); i != v.neighbours.end(), i++)
+
+        finish_node(start, G);
+    }
+public:
+    DFS(Graph &G)
+    {
+        path = std::vector<int> (G.get_amount_nodes());
+        color = std::vector<std::string> (G.get_amount_nodes());
+        for(int i = 0; i < G.get_amount_nodes(); i++)
         {
-            Finish_edge(i.to);
-        }*/
+            initialize_node(i,G);
+        }
+    }
+    DFS(int start, Graph &G): DFS(G)
+    {
+        start_node(start, G);
     }
 
-    void Start_vertex(Vertex v, Graph g)
+    ~DFS()
     {
-        DFS_Visit(v, g);
+        color.clear();
+        path.clear();
     }
+
+    void initialize_node(int node, Graph &G)
+    {
+        color[node] = "White";
+        path[node] = node;
+    }
+
+    void start_node(int node, Graph &G)
+    {
+        if(color[node] == "White")
+        {
+            Algorithm(node, G);
+        }
+    }
+
+    void discover_node(int node, Graph &G)
+    {
+        color[node] = "Gray";
+    }
+
+    void examine_edge(int from, int to, Graph &G)
+    {
+        if(color[to] == "White")
+        {
+            tree_edge(from, to, G);
+        }
+        else if(color[to] == "Gray")
+        {
+            back_edge(from, to, G);
+        }
+        else if(color[to] == "Black")
+        {
+            forward_or_cross_edge(from, to, G);
+        }
+    }
+
+    void tree_edge(int from, int to, Graph &G)
+    {
+        path[to] = from;
+        start_node(to, G);
+    }
+
+    void back_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void forward_or_cross_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void finish_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void finish_node(int node, Graph &G)
+    {
+        color[node] = "Black";
+    }
+
+    std::vector<std::string> get_visited()
+    {
+        return color;
+    }
+
 
 };
 
+class BFS: public Visitor
+{
+private:
+    std::queue<int> q;
+    std::vector<std::string> color;
+    std::vector<int> path;
+
+    Algorithm(int start, Graph &G)
+    {
+        discover_node(start, G);
+        while (!q.empty())
+        {
+            int current_edge = q.front();
+            std::cout << current_edge << std::endl;
+            for (int i = 0; i < G.get_amount_nodes(); i++)
+            {
+                if (G.get_adjacency_matrix()[current_edge][i])
+                {
+                    examine_edge(current_edge, i, G);
+                }
+            }
+            finish_node(current_edge, G);
+        }
+    }
+
+public:
+
+    BFS(Graph &G)
+    {
+        path = std::vector<int> (G.get_amount_nodes());
+        color = std::vector<std::string> (G.get_amount_nodes());
+        for (int i = 0; i < G.get_amount_nodes(); i++)
+        {
+            initialize_node(i, G);
+        }
+    }
+
+    BFS(int start, Graph &G): BFS(G)
+    {
+        start_node(start, G);
+    }
+
+    void initialize_node(int node, Graph &G)
+    {
+        color[node] = "White";
+        path[node] = node;
+    }
+
+    void start_node(int node, Graph &G)
+    {
+        if (color[node] == "White")
+        {
+            Algorithm(node, G);
+        }
+    }
+
+    void discover_node(int node, Graph &G)
+    {
+        q.push(node);
+        color[node] = "Gray";
+    }
+
+    void examine_edge(int from,int to, Graph &G)
+    {
+        if (color[to] == "White")
+        {
+            tree_edge(from, to, G);
+        }
+        else if (color[to] == "Gray")
+        {
+            back_edge(from, to, G);
+        }
+        else if (color[to] == "Balck")
+        {
+            forward_or_cross_edge(from, to, G);
+        }
+    }
+
+    void tree_edge(int from, int to, Graph &G)
+    {
+        path[to] = from;
+        discover_node(to, G);
+    }
+
+    void back_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void forward_or_cross_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void finish_edge(int from, int to, Graph &G)
+    {
+        return;
+    }
+
+    void finish_node(int node, Graph &G)
+    {
+        color[node] = "Black";
+        q.pop();
+    }
+
+    ~BFS()
+    {
+        color.clear();
+        path.clear();
+    }
+};
 
 int main()
 {
-    Graph g1;
-    Vertex a, b, c, d, e, f;
-    g1.AddVertex(a); //1
-    g1.AddVertex(b); //2
-    g1.AddVertex(c); //3
-    g1.AddVertex(d); //4
-    g1.AddVertex(e); //5
-    g1.AddVertex(f); //6
-    g1.AddEdge(a, b); // 1,2
-    g1.AddEdge(b, e); // 2,5
-    g1.AddEdge(a, f); // 1,6
-    g1.AddEdge(e, d); // 5,4
-    g1.AddEdge(b, d); // 2,4
-    g1.AddEdge(c, f); // 3,6
-    g1.AddEdge(f, e); // 6,5
-
-
-    DFSVisitor visit;
-
-    visit.DFS(g1, e);
-    visit.PrintPath();
-    for (int i = 0; i < 6; i++)
+    std::vector<std::vector<int>> M;
+    for(int i = 0; i < 4; i++)
     {
-        std::cout << g1.Nodes[i].number << std::endl;
+        std::vector<int> Vec = {0, 0, 0, 0};
+        M.push_back(Vec);
     }
-    std::cout << visit.path.size() << std::endl;
-    std::cout << g1.Nodes.size() << std::endl;
-    std::cout << g1.Nodes[0].neighbours.size() << std::endl;
+    M[0][2] = 1;
+    M[3][1] = 1;
+    M[1][3] = 1;
+    M[2][0] = 1;
+    M[2][1] = 1;
+    M[1][2] = 1;
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+            std::cout <<M[i][j] << ' ';
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    Graph G(M);
+    DFS visitor(1, G);
     return 0;
 }
